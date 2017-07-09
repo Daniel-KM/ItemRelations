@@ -5,10 +5,11 @@ jQuery(document).ready(function () {
         var curVocab = $(this).data("vocab");
         var rowClass = "relVocab_"+curVocab;
         var rowCount = $("."+rowClass).size();
+        var relVocabCount = isLimited ? '' : (' (' + rowCount + ')');
         $("th", this).append(
-            " <a href='#' class='relVocabShowHideBtn' data-vocab='"+curVocab+"'>"+
-            "["+relVocabShowHide +" ("+rowCount+")]"+
-            "</a>"
+            " <a href='#' class='relVocabShowHideBtn' data-vocab='"+curVocab+"'>"
+            + '[' + relVocabShowHide + relVocabCount + ']'
+            + '</a>'
         );
         // $("."+rowClass).toggle();
     });

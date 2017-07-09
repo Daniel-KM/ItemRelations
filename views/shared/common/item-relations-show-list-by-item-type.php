@@ -41,6 +41,17 @@
         </li>
     <?php endforeach; ?>
 </ul>
+<?php
+if ($limit && $totalSubjectRelations) {
+    echo link_to_items_browse(
+        __('Browse all %s subject relations.', $totalSubjectRelations),
+        array(
+            'item_relations_item_id' => $item->id,
+            'item_relations_clause_part' => 'subject',
+        ),
+        array());
+}
+?>
 <?php endif; ?>
 
 <h3><?php echo __('Relations to this item'); ?></h3>
@@ -67,4 +78,15 @@
         </li>
     <?php endforeach; ?>
 </ul>
+<?php
+if ($limit && $totalObjectRelations) {
+    echo link_to_items_browse(
+        __('Browse all %s object relations.', $totalObjectRelations),
+        array(
+            'item_relations_item_id' => $item->id,
+            'item_relations_clause_part' => 'object',
+        ),
+        array());
+}
+?>
 <?php endif; ?>

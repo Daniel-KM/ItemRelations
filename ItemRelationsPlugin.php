@@ -53,7 +53,9 @@ class ItemRelationsPlugin extends Omeka_Plugin_AbstractPlugin
         'item_relations_admin_sidebar_or_maincontent' => 'sidebar',
         'item_relations_public_append_to_items_show' => 1,
         'item_relations_public_display_mode' => 'table',
+        'item_relations_public_limit_display' => 50,
         'item_relations_admin_display_mode' => 'table',
+        'item_relations_admin_limit_display' => 50,
         'item_relations_tables_collapsible' => 1,
     );
 
@@ -502,43 +504,77 @@ class ItemRelationsPlugin extends Omeka_Plugin_AbstractPlugin
         $params = $args['params'];
 
         // Set the field on which to join.
-        if (isset($params['item_relations_clause_part'])
-                && $params['item_relations_clause_part'] == 'object'
-            ) {
-            $onField = 'object_item_id';
-        } else {
-            $onField = 'subject_item_id';
+        $onField = isset($params['item_relations_clause_part'])
+                && in_array($params['item_relations_clause_part'], array('all', 'subject', 'object'))
+            ? $params['item_relations_clause_part']
+            : 'all';
+
+        $itemRelationItemId = isset($params['item_relations_item_id'])
+            ? (integer) $params['item_relations_item_id']
+            : null;
+
+        if (empty($onField) && empty($itemRelationItemId)) {
+            return;
         }
 
-        $filter_relation = isset($params['item_relations_property_id'])
-            && is_numeric($params['item_relations_property_id']);
-        $filter_comment = isset($params['item_relations_comment'])
-            && (trim($params['item_relations_comment']));
+        $filterRelation = isset($params['item_relations_property_id'])
+            ? (integer) $params['item_relations_property_id']
+            : null;
+        $filterComment = isset($params['item_relations_comment'])
+            ? trim($params['item_relations_comment'])
+            : null;
 
-        if ($filter_relation || $filter_comment) {
+        if (empty($filterRelation) && !strlen($filterComment) && empty($itemRelationItemId)) {
+            return;
+        }
 
-            $db = $this->_db;
+        $db = $this->_db;
+
+        if ($onField == 'all') {
             $select
                 ->join(
                     array('item_relations_relations' => $db->ItemRelationsRelation),
-                    "item_relations_relations.$onField = items.id",
+                    "item_relations_relations.subject_item_id = items.id OR item_relations_relations.object_item_id = items.id ",
                     array()
                 );
+        } elseif ($itemRelationItemId) {
+            // The relation is inverted here.
+            $joinField = $onField == 'object' ? 'subject' : 'object';
+            $select
+                ->join(
+                    array('item_relations_relations' => $db->ItemRelationsRelation),
+                    "item_relations_relations.{$joinField}_item_id = items.id",
+                    array()
+                );
+        } else {
+            $select
+                ->join(
+                    array('item_relations_relations' => $db->ItemRelationsRelation),
+                    "item_relations_relations.{$onField}_item_id = items.id",
+                    array()
+                );
+        }
 
-            if ($filter_relation) {
-                $select->where('item_relations_relations.property_id = ?',
-                    $params['item_relations_property_id']);
-            }
-
-            if ($filter_comment) {
-                $select->where('item_relations_relations.relation_comment LIKE ?',
-                "%" . trim($params['item_relations_comment']) . "%" );
+        if ($itemRelationItemId) {
+            if ($onField == 'all') {
+                $select
+                    ->where("item_relations_relations.subject_item_id = $itemRelationItemId
+                        OR item_relations_relations.object_item_id = $itemRelationItemId")
+                    // Exclude the current item.
+                    ->where('items.id != ?', $itemRelationItemId);
+            } else {
+                $select
+                    ->where("item_relations_relations.{$onField}_item_id = ?", $itemRelationItemId);
             }
         }
 
-        # echo "<pre>"; print_r($select); die("</pre>");
+        if ($filterRelation) {
+            $select->where('item_relations_relations.property_id = ?', $filterRelation);
+        }
 
-        // $select->where('items.id = ?', 2);
+        if (strlen($filterComment)) {
+            $select->where('item_relations_relations.relation_comment LIKE ?', "%{$filterComment}%" );
+        }
     }
 
     /**
@@ -649,11 +685,14 @@ class ItemRelationsPlugin extends Omeka_Plugin_AbstractPlugin
      * Prepare subject item relations for display.
      *
      * @param Item $item
+     * @param int $limit
+     * @param int $page
      * @return array
      */
-    public static function prepareSubjectRelations(Item $item)
+    public static function prepareSubjectRelations(Item $item, $limit = null, $page = null)
     {
-        $subjects = get_db()->getTable('ItemRelationsRelation')->findBySubjectItemId($item->id, true);
+        $subjects = get_db()->getTable('ItemRelationsRelation')
+            ->findBySubjectItemId($item->id, true, null, $limit, $page);
         $subjectRelations = array();
         foreach ($subjects as $subject) {
             $objectItem = get_record_by_id('Item', $subject->object_item_id);
@@ -676,11 +715,14 @@ class ItemRelationsPlugin extends Omeka_Plugin_AbstractPlugin
      * Prepare object item relations for display.
      *
      * @param Item $item
+     * @param int $limit
+     * @param int $page
      * @return array
      */
-    public static function prepareObjectRelations(Item $item)
+    public static function prepareObjectRelations(Item $item, $limit = null, $page = null)
     {
-        $objects = get_db()->getTable('ItemRelationsRelation')->findByObjectItemId($item->id, true);
+        $objects = get_db()->getTable('ItemRelationsRelation')
+            ->findByObjectItemId($item->id, true, null, $limit, $page);
         $objectRelations = array();
         foreach ($objects as $object) {
             $subjectItem = get_record_by_id('Item', $object->subject_item_id);
@@ -705,9 +747,11 @@ class ItemRelationsPlugin extends Omeka_Plugin_AbstractPlugin
     * ... Currently, the two are necessary for (new) show relations by show-list-by-item-type
     *
     * @param Item $item
+    * @param int $limit
+    * @param int $page
     * @return array
     */
-    public static function prepareAllRelations(Item $item)
+    public static function prepareAllRelations(Item $item, $limit = null, $page = null)
     {
       if (!isset($item->id)) { return array(); }
 
@@ -720,6 +764,14 @@ class ItemRelationsPlugin extends Omeka_Plugin_AbstractPlugin
                " OR irr.object_item_id = $item->id".
                " ORDER BY irv.name ASC, irp.vocabulary_id ASC".
                "";
+
+      if ($limit) {
+          if (!$page) {
+              $page = 1;
+          }
+          $query .= ' LIMIT ' . (integer) $limit . ' OFFSET ' . (integer) $page;
+      }
+
       # echo "<pre>$query</pre>";
       $partners = $db->fetchAll($query);
       # echo "<pre>$query:\n" . print_r($partners,true) . "</pre>";
@@ -757,6 +809,58 @@ class ItemRelationsPlugin extends Omeka_Plugin_AbstractPlugin
 
       # echo "<pre>" . print_r($relations, true) . "</pre>";
       return $relations;
+    }
+
+    /**
+     * Get the total of subject item relations for an item.
+     *
+     * @param Item $item
+     * @return int
+     */
+    public static function countSubjectRelations(Item $item)
+    {
+        $total = get_db()->getTable('ItemRelationsRelation')
+            ->countBySubjectItemId($item->id);
+        return $total;
+    }
+
+    /**
+     * Get the total of object item relations for an item.
+     *
+     * @param Item $item
+     * @return int
+     */
+    public static function countObjectRelations(Item $item)
+    {
+        $total = get_db()->getTable('ItemRelationsRelation')
+            ->countByObjectItemId($item->id);
+        return $total;
+    }
+
+    /**
+     * Get the total of item relations for an item.
+     *
+     * @øee self::prepareAllRelations()
+     *
+     * @param Item $item
+     * @return int
+     */
+    public static function countAllRelations(Item $item)
+    {
+        if (!isset($item->id)) {
+            return 0;
+        }
+
+        $db = get_db();
+        $select = $db->getTable('ItemRelationsRelation')
+            ->getSelectForCount();
+
+        $select
+            ->where('item_relations_relations.subject_item_id = ?', $item->id)
+            ->orWhere('item_relations_relations.object_item_id = ?', $item->id);
+
+        $total = $db->fetchOne($select);
+        return $total;
     }
 
     /**

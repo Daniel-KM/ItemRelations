@@ -1,6 +1,7 @@
 <?php
 /**
  * Item Relations
+ *
  * @copyright Copyright 2010-2014 Roy Rosenzweig Center for History and New Media
  * @license http://www.gnu.org/licenses/gpl-3.0.txt GNU GPLv3
  */
@@ -45,9 +46,85 @@ class Table_ItemRelationsRelation extends Omeka_Db_Table
      * @param integer $subjectItemId
      * @param boolean $onlyExistingObjectItems
      * @param integer|array $propertyId
+     * @param int $limit
+     * @param int $page
      * @return array
      */
-    public function findBySubjectItemId($subjectItemId, $onlyExistingObjectItems = true, $propertyId = null)
+    public function findBySubjectItemId(
+        $subjectItemId,
+        $onlyExistingObjectItems = true,
+        $propertyId = null,
+        $limit = null,
+        $page = null
+    ) {
+        $select = $this->_findBySubjectItemId($subjectItemId, $onlyExistingObjectItems, $propertyId);
+        if ($limit) {
+            $this->applyPagination($select, $limit, $page);
+        }
+        return $this->fetchObjects($select);
+    }
+
+    /**
+     * Find item relations by object item ID.
+     *
+     * @param integer $objectItemId
+     * @param boolean $onlyExistingSubjectItems
+     * @param integer|array $propertyId
+     * @param int $limit
+     * @param int $page
+     * @return array
+     */
+    public function findByObjectItemId(
+        $objectItemId,
+        $onlyExistingSubjectItems = true,
+        $propertyId = null,
+        $limit = null,
+        $page = null
+    ) {
+        $select = $this->_findByObjectItemId($objectItemId, $onlyExistingSubjectItems, $propertyId);
+        if ($limit) {
+            $this->applyPagination($select, $limit, $page);
+        }
+        return $this->fetchObjects($select);
+    }
+
+    /**
+     * Get the total of item relations by subject item ID.
+     *
+     * @param integer $subjectItemId
+     * @param boolean $onlyExistingObjectItems
+     * @param integer|array $propertyId
+     * @return int
+     */
+    public function countBySubjectItemId($subjectItemId, $onlyExistingObjectItems = true, $propertyId = null)
+    {
+        $select = $this->_findBySubjectItemId($subjectItemId, $onlyExistingObjectItems, $propertyId);
+        return $this->_countRelations($select);
+    }
+
+    /**
+     * Get the total of item relations by object item ID.
+     *
+     * @param integer $objectItemId
+     * @param boolean $onlyExistingSubjectItems
+     * @param integer|array $propertyId
+     * @return int
+     */
+    public function countByObjectItemId($objectItemId, $onlyExistingSubjectItems = true, $propertyId = null)
+    {
+        $select = $this->_findByObjectItemId($objectItemId, $onlyExistingSubjectItems, $propertyId);
+        return $this->_countRelations($select);
+    }
+
+    /**
+     * Prepare the select to find item relations by subject item ID.
+     *
+     * @param integer $subjectItemId
+     * @param boolean $onlyExistingObjectItems
+     * @param integer|array $propertyId
+     * @return Select
+     */
+    protected function _findBySubjectItemId($subjectItemId, $onlyExistingObjectItems = true, $propertyId = null)
     {
         $db = $this->_db;
         $select = $this->getSelect()
@@ -70,18 +147,18 @@ class Table_ItemRelationsRelation extends Omeka_Db_Table
                     ->where('item_relations_relations.property_id = ?', (int) $propertyId);
             }
         }
-        return $this->fetchObjects($select);
+        return $select;
     }
 
     /**
-     * Find item relations by object item ID.
+     * Prepare the select to find item relations by object item ID.
      *
      * @param integer $objectItemId
      * @param boolean $onlyExistingSubjectItems
      * @param integer|array $propertyId
-     * @return array
+     * @return Select
      */
-    public function findByObjectItemId($objectItemId, $onlyExistingSubjectItems = true, $propertyId = null)
+    protected function _findByObjectItemId($objectItemId, $onlyExistingSubjectItems = true, $propertyId = null)
     {
         $db = $this->_db;
         $select = $this->getSelect()
@@ -104,7 +181,7 @@ class Table_ItemRelationsRelation extends Omeka_Db_Table
                     ->where('item_relations_relations.property_id = ?', (int) $propertyId);
             }
         }
-        return $this->fetchObjects($select);
+        return $select;
     }
 
     /**
@@ -115,10 +192,17 @@ class Table_ItemRelationsRelation extends Omeka_Db_Table
      * @param integer|array $objectItemId
      * @param integer|array $propertyId
      * @param integer|array $subjectItemId
+     * @param int $limit
+     * @param int $page
      * @return array
      */
-    public function findRelations($subjectItemId = null, $propertyId = null, $objectItemId = null)
-    {
+    public function findRelations(
+        $subjectItemId = null,
+        $propertyId = null,
+        $objectItemId = null,
+        $limit = null,
+        $page = null
+    ) {
         $params = array();
         if (!is_null($subjectItemId)) {
             $params['subject_item_id'] = is_array($subjectItemId)
@@ -135,6 +219,22 @@ class Table_ItemRelationsRelation extends Omeka_Db_Table
                 ? array_map('intval', $objectItemId)
                 : (integer) $objectItemId;
         }
-        return $this->findBy($params);
+        return $this->findBy($params, $limit, $page);
+    }
+
+    /**
+     * Get the total of relations from a select.
+     *
+     * @param Select $select
+     * @return int
+     */
+    protected function _countRelations(Omeka_Db_Select $select)
+    {
+        $select->reset(Zend_Db_Select::COLUMNS);
+        $alias = $this->getTableAlias();
+        $select->from(array(), "COUNT(DISTINCT($alias.id))");
+        $select->reset(Zend_Db_Select::ORDER)->reset(Zend_Db_Select::GROUP);
+        $select->reset(Zend_Db_Select::LIMIT_COUNT)->reset(Zend_Db_Select::LIMIT_OFFSET);
+        return $this->getDb()->fetchOne($select);
     }
 }

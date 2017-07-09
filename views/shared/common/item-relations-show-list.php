@@ -28,4 +28,13 @@
     echo "</li>";
   } # foreach
   echo "</ul>";
-?>
+
+if ($limit && $totalAllRelations) {
+    echo link_to_items_browse(
+        __('Browse all %s relations.', $totalAllRelations),
+        array(
+            'item_relations_item_id' => $item->id,
+            'item_relations_clause_part' => 'all',
+        ),
+        array());
+}

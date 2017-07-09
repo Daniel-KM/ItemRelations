@@ -10,6 +10,7 @@ $relVocabShowHideAll = __("Show / Hide All");
 <script type='text/javascript'>
     var relVocabShowHide = <?php echo json_encode($relVocabShowHide); ?>;
     var relVocabShowHideAll = <?php echo json_encode($relVocabShowHideAll); ?>;
+    var isLimited = <?php echo $limit ? 'true' : 'false'; ?>;
 </script>
 <?php
   if (get_option('item_relations_tables_collapsible')) {
@@ -47,3 +48,13 @@ foreach ($allRelations as $relation) {
 } # foreach
 ?>
 </tbody></table>
+<?php
+if ($limit && $totalAllRelations) {
+    echo link_to_items_browse(
+        __('Browse all %s relations.', $totalAllRelations),
+        array(
+            'item_relations_item_id' => $item->id,
+            'item_relations_clause_part' => 'all',
+        ),
+        array());
+}

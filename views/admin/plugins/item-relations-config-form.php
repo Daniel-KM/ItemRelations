@@ -112,6 +112,19 @@
     </div>
     <div class="field">
         <div class="two columns alpha">
+            <?php echo $this->formLabel('item_relations_admin_limit_display',
+                __('Maximum displayed admin relations')); ?>
+        </div>
+        <div class="inputs five columns omega">
+            <p class="explanation">
+                <?php echo __('When relations are numerous, this parameter limits the number of relations, so speeds up the display.'); ?>
+                <?php echo __('A link is added to display all relations via the browse view.'); ?>
+            </p>
+            <?php echo $this->formText('item_relations_admin_limit_display', get_option('item_relations_admin_limit_display'), null); ?>
+        </div>
+    </div>
+    <div class="field">
+        <div class="two columns alpha">
             <?php echo $this->formLabel('item_relations_public_append_to_items_show',
             __('Append to Public Items Show')); ?>
         </div>
@@ -143,6 +156,19 @@
                         'list' => __('As a list'),
                         'list-by-item-type' => __('By item type'),
                     )); ?>
+        </div>
+    </div>
+    <div class="field">
+        <div class="two columns alpha">
+            <?php echo $this->formLabel('item_relations_public_limit_display',
+                __('Maximum displayed public relations')); ?>
+        </div>
+        <div class="inputs five columns omega">
+            <p class="explanation">
+                <?php echo __('When relations are numerous, this parameter limits the number of relations, so speeds up the display.'); ?>
+                <?php echo __('A link is added to display all relations via the browse view.'); ?>
+            </p>
+            <?php echo $this->formText('item_relations_public_limit_display', get_option('item_relations_public_limit_display'), null); ?>
         </div>
     </div>
     <div class="field">
