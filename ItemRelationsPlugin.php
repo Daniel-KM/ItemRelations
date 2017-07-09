@@ -693,6 +693,36 @@ class ItemRelationsPlugin extends Omeka_Plugin_AbstractPlugin
     {
         $subjects = get_db()->getTable('ItemRelationsRelation')
             ->findBySubjectItemId($item->id, true, null, $limit, $page);
+        return self::_prepareSubjects($subjects);
+    }
+
+    /**
+     * Prepare subject item relations by group for display.
+     *
+     * @param Item $item
+     * @param int $limit
+     * @param int $page The page is currently not managed.
+     * @param string $group
+     * @return array
+     */
+    public static function prepareSubjectRelationsLimitByGroup(Item $item, $limit = null, $page = null, $group = null)
+    {
+        $subjects = get_db()->getTable('ItemRelationsRelation')
+            ->findBySubjectItemIdByGroup($item->id, true, null, $limit, $page, $group);
+        $subjectRelations = array();
+        foreach ($subjects as $itemTypeId => $subjectsArray) {
+            $subjectRelations[$itemTypeId] = self::_prepareSubjects($subjectsArray);
+        }
+        return $subjectRelations;
+    }
+
+    /**
+     * Helper to prepare subject relations.
+     *
+     * @param array $subjects
+     */
+    protected static function _prepareSubjects($subjects)
+    {
         $subjectRelations = array();
         foreach ($subjects as $subject) {
             $objectItem = get_record_by_id('Item', $subject->object_item_id);
@@ -703,6 +733,7 @@ class ItemRelationsPlugin extends Omeka_Plugin_AbstractPlugin
                 'item_relation_id' => $subject->id,
                 'object_item' => $objectItem,
                 'object_item_title' => self::getItemTitle($objectItem),
+                'relation_property' => $subject->property_id,
                 'relation_comment' => $subject->relation_comment,
                 'relation_text' => $subject->getPropertyText(),
                 'relation_description' => $subject->property_description,
@@ -723,6 +754,36 @@ class ItemRelationsPlugin extends Omeka_Plugin_AbstractPlugin
     {
         $objects = get_db()->getTable('ItemRelationsRelation')
             ->findByObjectItemId($item->id, true, null, $limit, $page);
+        return self::_prepareObjects($objects);
+    }
+
+    /**
+     * Prepare object item relations by group for display.
+     *
+     * @param Item $item
+     * @param int $limit
+     * @param int $page The page is currently not managed.
+     * @param string $group
+     * @return array
+     */
+    public static function prepareObjectRelationsLimitByGroup(Item $item, $limit = null, $page = null, $group = null)
+    {
+        $objects = get_db()->getTable('ItemRelationsRelation')
+            ->findByObjectItemIdByGroup($item->id, true, null, $limit, $page, $group);
+        $objectRelations = array();
+        foreach ($objects as $itemTypeId => $objectsArray) {
+            $objectRelations[$itemTypeId] = self::_prepareObjects($objectsArray);
+        }
+        return $objectRelations;
+    }
+
+    /**
+     * Helper to prepare object relations.
+     *
+     * @param array $objects
+     */
+    protected static function _prepareObjects($objects)
+    {
         $objectRelations = array();
         foreach ($objects as $object) {
             $subjectItem = get_record_by_id('Item', $object->subject_item_id);
@@ -733,6 +794,7 @@ class ItemRelationsPlugin extends Omeka_Plugin_AbstractPlugin
                 'item_relation_id' => $object->id,
                 'subject_item' => $subjectItem,
                 'subject_item_title' => self::getItemTitle($subjectItem),
+                'relation_property' => $object->property_id,
                 'relation_comment' => $object->relation_comment,
                 'relation_text' => $object->getPropertyText(),
                 'relation_description' => $object->property_description,
@@ -834,6 +896,34 @@ class ItemRelationsPlugin extends Omeka_Plugin_AbstractPlugin
     {
         $total = get_db()->getTable('ItemRelationsRelation')
             ->countByObjectItemId($item->id);
+        return $total;
+    }
+
+    /**
+     * Get the total of subject item relations for an item, by group.
+     *
+     * @param Item $item
+     * @param string $group
+     * @return int
+     */
+    public static function countSubjectRelationsByGroup(Item $item, $group = null)
+    {
+        $total = get_db()->getTable('ItemRelationsRelation')
+            ->countBySubjectItemIdByGroup($item->id, true, null, $group);
+        return $total;
+    }
+
+    /**
+     * Get the total of object item relations for an item, by group.
+     *
+     * @param Item $item
+     * @param string $group
+     * @return int
+     */
+    public static function countObjectRelationsByGroup(Item $item, $group = null)
+    {
+        $total = get_db()->getTable('ItemRelationsRelation')
+            ->countByObjectItemIdByGroup($item->id, true, null, $group);
         return $total;
     }
 

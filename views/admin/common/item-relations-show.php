@@ -5,13 +5,17 @@
 
     $subjectRelations = $objectRelations = $allRelations = false;
     $totalSubjectRelations = $totalObjectRelations = $totalAllRelations = 0;
+    $group = null;
     $mode = get_option('item_relations_admin_display_mode') ?: 'table';
     $limit = get_option('item_relations_admin_limit_display');
-    if ($mode == 'list-by-item-type') {
+    $isLimitByGroup = false;
+    if (in_array($mode, array('list-by-item-type', 'list-by-property'))) {
+        $group = $mode == 'list-by-property' ? 'property' : 'item_type';
         $subjectRelations = ItemRelationsPlugin::prepareSubjectRelations($item, $limit);
         $objectRelations = ItemRelationsPlugin::prepareObjectRelations($item, $limit);
         $totalSubjectRelations = ItemRelationsPlugin::countSubjectRelations($item);
         $totalObjectRelations = ItemRelationsPlugin::countObjectRelations($item);
+        $mode = 'list-group';
     }
     else {
         $allRelations = ItemRelationsPlugin::prepareAllRelations($item, $limit);
@@ -34,6 +38,8 @@
                 'totalObjectRelations' => $totalObjectRelations,
                 'totalAllRelations' => $totalAllRelations,
                 'limit' => $limit,
+                'isLimitByGroup' => $isLimitByGroup,
+                'group' => $group,
             ));
         endif; ?>
     </div>

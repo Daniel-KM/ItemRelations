@@ -107,6 +107,7 @@
                         'table' => __('As a table'),
                         'list' => __('As a list'),
                         'list-by-item-type' => __('By item type'),
+                        'list-by-property' => __('By relation type'),
                     )); ?>
         </div>
     </div>
@@ -154,7 +155,14 @@
                     get_option('item_relations_public_display_mode'), null, array(
                         'table' => __('As a table'),
                         'list' => __('As a list'),
-                        'list-by-item-type' => __('By item type'),
+                        'list-by-item-type' => __('As a list grouped by item type'),
+                        'list-by-item-type-limit' => __('As a list grouped by item type (with limit)'),
+                        'list-by-property' => __('As a list grouped by relation type'),
+                        'list-by-property-limit' => __('As a list grouped by relation type (with limit)'),
+                        'tabs-by-item-type' => __('As tabs grouped by item type'),
+                        'tabs-by-item-type-limit' => __('As tabs grouped by item type (with limit)'),
+                        'tabs-by-property' => __('As tabs grouped by by relation type'),
+                        'tabs-by-property-limit' => __('As tabs grouped by relation type (with limit)'),
                     )); ?>
         </div>
     </div>

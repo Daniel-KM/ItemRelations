@@ -28,7 +28,7 @@ class ItemRelationsProperty extends Omeka_Record_AbstractRecord
 
     /**
      * Human-readable name for the property.
-     * @var string 
+     * @var string
      */
     public $label;
 

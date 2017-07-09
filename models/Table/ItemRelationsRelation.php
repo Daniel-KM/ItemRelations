@@ -36,7 +36,9 @@ class Table_ItemRelationsRelation extends Omeka_Db_Table
             ->join(
                 array('item_relations_vocabularies' => $db->ItemRelationsVocabulary),
                 'item_relations_properties.vocabulary_id = item_relations_vocabularies.id',
-                array('vocabulary_namespace_prefix' => 'namespace_prefix')
+                array(
+                    'vocabulary_namespace_prefix' => 'namespace_prefix',
+                )
             );
     }
 
@@ -89,6 +91,121 @@ class Table_ItemRelationsRelation extends Omeka_Db_Table
     }
 
     /**
+     * Find item relations by subject item ID, limited by group.
+     *
+     * @param integer $subjectItemId
+     * @param boolean $onlyExistingObjectItems
+     * @param integer|array $propertyId
+     * @param int $limit
+     * @param int $page The page is currently not managed.
+     * @param string $group
+     * @return array
+     */
+    public function findBySubjectItemIdByGroup(
+        $subjectItemId,
+        $onlyExistingObjectItems = true,
+        $propertyId = null,
+        $limit = null,
+        $page = null,
+        $group = null
+    ) {
+        if (empty($limit) || !in_array($group, array('item_type', 'property'))) {
+            return $this->findBySubjectItemId($item, $limit, $page);
+        }
+
+        // A two-steps process is used to avoid complex query with multi-limit.
+        switch ($group) {
+            case 'item_type':
+                $select = $this->_findBySubjectItemId($subjectItemId, $onlyExistingObjectItems, $propertyId)
+                    ->joinLeft(
+                        array('ir_items' => $this->_db->Item),
+                        'item_relations_relations.object_item_id = ir_items.id',
+                        array(
+                            'group' => 'ir_items.item_type_id',
+                        )
+                    );
+                $colGroup = 'group';
+                break;
+            case 'property':
+                $select = $this->_findBySubjectItemId($subjectItemId, $onlyExistingObjectItems, $propertyId);
+                $colGroup = 'property_id';
+                break;
+        }
+
+        return $this->_fetchLimitByGroup($select, array(), $limit, $colGroup);
+    }
+
+    /**
+     * Find item relations by object item ID, limited by group.
+     *
+     * @param integer $objectItemId
+     * @param boolean $onlyExistingSubjectItems
+     * @param integer|array $propertyId
+     * @param int $limit
+     * @param int $page The page is currently not managed.
+     * @param string $group
+     * @return array
+     */
+    public function findByObjectItemIdByGroup(
+        $objectItemId,
+        $onlyExistingSubjectItems = true,
+        $propertyId = null,
+        $limit = null,
+        $page = null,
+        $group = null
+    ) {
+        if (empty($limit) || !in_array($group, array('item_type', 'property'))) {
+            return $this->findByObjectItemId($item, $limit, $page);
+        }
+
+        // A two-steps process is used to avoid complex query with multi-limit.
+        switch ($group) {
+            case 'item_type':
+                $select = $this->_findByObjectItemId($objectItemId, $onlyExistingSubjectItems, $propertyId)
+                    ->joinLeft(
+                        array('ir_items' => $this->_db->Item),
+                        'item_relations_relations.subject_item_id = ir_items.id',
+                        array(
+                            'group' => 'ir_items.item_type_id',
+                        )
+                    );
+                    $colGroup = 'group';
+                    break;
+            case 'property':
+                $select = $this->_findByObjectItemId($objectItemId, $onlyExistingSubjectItems, $propertyId);
+                $colGroup = 'property_id';
+                break;
+        }
+
+        return $this->_fetchLimitByGroup($select, array(), $limit, $colGroup);
+    }
+
+    /**
+     * Helper to limit query of objects by group.
+     *
+     * @param string $sql
+     * @param array $params
+     * @param integer $limit
+     * @param string $colGroup
+     * @return array
+     */
+    protected function _fetchLimitByGroup($sql, $params = array(), $limit = null, $colGroup = 'group')
+    {
+        $res = $this->getDb()->query($sql, $params);
+        $data = $res->fetchAll();
+
+        $limitedData = array();
+        foreach ($data as $row) {
+            $groupId = (integer) $row[$colGroup] ?: '';
+            if (!isset($limitedData[$groupId]) || count($limitedData[$groupId]) < $limit) {
+                $limitedData[$groupId][] = $this->recordFromData($row);
+            }
+        }
+
+        return $limitedData;
+    }
+
+    /**
      * Get the total of item relations by subject item ID.
      *
      * @param integer $subjectItemId
@@ -114,6 +231,78 @@ class Table_ItemRelationsRelation extends Omeka_Db_Table
     {
         $select = $this->_findByObjectItemId($objectItemId, $onlyExistingSubjectItems, $propertyId);
         return $this->_countRelations($select);
+    }
+
+    /**
+     * Get the total of item relations by group and by subject item ID.
+     *
+     * @param integer $subjectItemId
+     * @param boolean $onlyExistingObjectItems
+     * @param integer|array $propertyId
+     * @param string $group
+     * @return array
+     */
+    public function countBySubjectItemIdByGroup($subjectItemId, $onlyExistingObjectItems = true, $propertyId = null, $group = null)
+    {
+        if (!in_array($group, array('item_type', 'property'))) {
+            return $this->countBySubjectItemId($subjectItemId, $onlyExistingObjectItems, $propertyId);
+        }
+
+        switch ($group) {
+            case 'item_type':
+                $select = $this->_findBySubjectItemId($subjectItemId, $onlyExistingObjectItems, $propertyId)
+                    ->joinLeft(
+                        array('ir_items' => $this->_db->Item),
+                        'item_relations_relations.object_item_id = ir_items.id',
+                        array(
+                            'group' => 'ir_items.item_type_id',
+                        )
+                    );
+                $columns = array('group' => 'ir_items.item_type_id');
+                break;
+            case 'property':
+                $select = $this->_findBySubjectItemId($subjectItemId, $onlyExistingObjectItems, $propertyId);
+                $columns = array('property_id' => 'item_relations_relations.property_id');
+                break;
+        }
+
+        return $this->_countRelationsByGroup($select, $columns);
+    }
+
+    /**
+     * Get the total of item relations by group and by object item ID.
+     *
+     * @param integer $objectItemId
+     * @param boolean $onlyExistingSubjectItems
+     * @param integer|array $propertyId
+     * @param string $group
+     * @return array
+     */
+    public function countByObjectItemIdByGroup($objectItemId, $onlyExistingSubjectItems = true, $propertyId = null, $group = null)
+    {
+        if (!in_array($group, array('item_type', 'property'))) {
+            return $this->countByObjectItemId($objectItemId, $onlyExistingSubjectItems, $propertyId);
+        }
+
+        switch ($group) {
+            case 'item_type':
+                $select = $this->_findByObjectItemId($objectItemId, $onlyExistingSubjectItems, $propertyId)
+                    ->joinLeft(
+                        array('ir_items' => $this->_db->Item),
+                        'item_relations_relations.subject_item_id = ir_items.id',
+                        array(
+                            'group' => 'ir_items.item_type_id',
+                        )
+                    );
+                $columns = array('group' => 'ir_items.item_type_id');
+                break;
+            case 'property':
+                $select = $this->_findByObjectItemId($objectItemId, $onlyExistingSubjectItems, $propertyId);
+                $columns = array('property_id' => 'item_relations_relations.property_id');
+                break;
+        }
+
+        return $this->_countRelationsByGroup($select, $columns);
     }
 
     /**
@@ -225,7 +414,7 @@ class Table_ItemRelationsRelation extends Omeka_Db_Table
     /**
      * Get the total of relations from a select.
      *
-     * @param Select $select
+     * @param Omeka_Db_Select $select
      * @return int
      */
     protected function _countRelations(Omeka_Db_Select $select)
@@ -236,5 +425,30 @@ class Table_ItemRelationsRelation extends Omeka_Db_Table
         $select->reset(Zend_Db_Select::ORDER)->reset(Zend_Db_Select::GROUP);
         $select->reset(Zend_Db_Select::LIMIT_COUNT)->reset(Zend_Db_Select::LIMIT_OFFSET);
         return $this->getDb()->fetchOne($select);
+    }
+
+    /**
+     * Get the total of relations from a select, by group.
+     *
+     * @param Omeka_Db_Select $select
+     * @param array $columns Associative array with one key/value.
+     * @return array
+     */
+    protected function _countRelationsByGroup(Omeka_Db_Select $select, $columns)
+    {
+        $select->reset(Zend_Db_Select::COLUMNS);
+        $alias = $this->getTableAlias();
+        $colGroup = key($columns);
+        $columns['count'] = "COUNT(DISTINCT($alias.id))";
+        $select->from(array(), $columns);
+        $select->reset(Zend_Db_Select::ORDER)->reset(Zend_Db_Select::GROUP);
+        $select->reset(Zend_Db_Select::LIMIT_COUNT)->reset(Zend_Db_Select::LIMIT_OFFSET);
+        $select->group($colGroup);
+        $result = $this->getDb()->fetchPairs($select);
+        if (isset($result[''])) {
+            $result[0] = $result[''];
+            unset($result['']);
+        }
+        return $result;
     }
 }
