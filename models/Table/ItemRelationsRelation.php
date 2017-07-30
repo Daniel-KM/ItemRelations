@@ -336,6 +336,7 @@ class Table_ItemRelationsRelation extends Omeka_Db_Table
                     ->where('item_relations_relations.property_id = ?', (int) $propertyId);
             }
         }
+        $this->checkPublicPermissions($select);
         return $select;
     }
 
@@ -370,6 +371,7 @@ class Table_ItemRelationsRelation extends Omeka_Db_Table
                     ->where('item_relations_relations.property_id = ?', (int) $propertyId);
             }
         }
+        $this->checkPublicPermissions($select);
         return $select;
     }
 
@@ -424,6 +426,9 @@ class Table_ItemRelationsRelation extends Omeka_Db_Table
         $select->from(array(), "COUNT(DISTINCT($alias.id))");
         $select->reset(Zend_Db_Select::ORDER)->reset(Zend_Db_Select::GROUP);
         $select->reset(Zend_Db_Select::LIMIT_COUNT)->reset(Zend_Db_Select::LIMIT_OFFSET);
+
+        $this->checkPublicPermissions($select);
+
         return $this->getDb()->fetchOne($select);
     }
 
@@ -444,11 +449,21 @@ class Table_ItemRelationsRelation extends Omeka_Db_Table
         $select->reset(Zend_Db_Select::ORDER)->reset(Zend_Db_Select::GROUP);
         $select->reset(Zend_Db_Select::LIMIT_COUNT)->reset(Zend_Db_Select::LIMIT_OFFSET);
         $select->group($colGroup);
+
+        $this->checkPublicPermissions($select);
+
         $result = $this->getDb()->fetchPairs($select);
         if (isset($result[''])) {
             $result[0] = $result[''];
             unset($result['']);
         }
+
         return $result;
+    }
+
+    protected function checkPublicPermissions($select)
+    {
+        $permissions = new Omeka_Db_Select_PublicPermissions('Items');
+        $permissions->apply($select, 'items');
     }
 }
