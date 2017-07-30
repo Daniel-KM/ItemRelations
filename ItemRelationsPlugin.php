@@ -41,6 +41,7 @@ class ItemRelationsPlugin extends Omeka_Plugin_AbstractPlugin
         'admin_items_form_tabs',
         'admin_navigation_main',
         'item_relations_properties_select_options',
+        'item_search_filters',
     );
 
     /**
@@ -679,6 +680,38 @@ class ItemRelationsPlugin extends Omeka_Plugin_AbstractPlugin
             $selectOptions = array_intersect_key($selectOptions, array_flip($allowedVocabularies));
         }
         return $selectOptions;
+    }
+
+    /**
+     * Add the "Item Relations" queries to items/browse.
+     *
+     * @return array
+     */
+    public function filterItemSearchFilters($displayArray, $args)
+    {
+        $requestArray = $args['request_array'];
+        if (!empty($requestArray['item_relations_item_id'])
+            && !empty($requestArray['item_relations_clause_part'])
+            && !empty($requestArray['item_relations_property_id'])
+        ) {
+            $item = $this->_db->getTable('Item')->find($requestArray['item_relations_item_id']);
+            if ($item) {
+                $item = metadata($item, 'display_title') ?: __('[Untitled]');
+            } else {
+                $item = __('[Unknown]');
+            }
+            $relationType = $requestArray['item_relations_clause_part'] === 'object'
+                ? __('object')
+                : __('subject');
+            $relation = $this->_db->getTable('ItemRelationsProperty')->find($requestArray['item_relations_property_id']);
+            $relation = $relation ? $relation->getText() : __('Unknown');
+
+            // Examples of filter indicators.
+            // $displayArray['Item Relation'] = __('%s is related with property "%s" as %s', $item, $relation, $relationType);
+            // $displayArray['Item Relation'] = sprintf('%s: %s (as %s)', $relation, $item, $relationType);
+            $displayArray[$relation . ' (' . __('as %s', $relationType) . ')'] = $item;
+        }
+        return $displayArray;
     }
 
     /**
