@@ -30,8 +30,8 @@ Warning
 
 Use it at your own risk.
 
-It's always recommended to backup your files and database regularly so you can
-roll back if needed.
+It’s always recommended to backup your files and your databases and to check
+your archives regularly so you can roll back if needed.
 
 
 Troubleshooting
@@ -83,7 +83,7 @@ Copyright
 [Item Relations]: https://github.com/omeka/plugin-ItemRelations
 [Omeka]: https://omeka.org
 [plugin issues]: https://github.com/omeka/plugin-ItemRelations/issues
-[fork issues]: https://github.com/Daniel-KM/ItemRelations/issues
+[fork issues]: https://github.com/Daniel-KM/Omeka-plugin-ItemRelations/issues
 [GNU/GPL]: https://www.gnu.org/licenses/gpl-3.0.html
 [Center for History & New Media]: http://chnm.gmu.edu
 [GerZah]: https://github.com/GerZah
