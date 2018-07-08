@@ -25,6 +25,19 @@ Uncompress files and rename plugin folder "ItemRelations".
 Then install it like any other Omeka plugin and follow the config instructions.
 
 
+Usage
+-----
+
+The item relations are automatically displayed in the public pages.
+
+When the automatic display is disabled, you can call the partial directly in the
+theme:
+
+```php
+echo common('item-relations-show', array('item' => $item));
+```
+
+
 Warning
 -------
 
@@ -77,7 +90,7 @@ Copyright
 * Copyright Center for History and New Media, 2011-2015
 * Copyright Michael Slone, 2015
 * Copyright Gero Zahn, 2015-2016
-* Copyright Daniel Berthereau, 2015-2016
+* Copyright Daniel Berthereau, 2015-2018
 
 
 [Item Relations]: https://github.com/omeka/plugin-ItemRelations
