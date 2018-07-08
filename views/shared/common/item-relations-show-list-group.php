@@ -146,7 +146,7 @@ endif;
             echo __($groups[$groupId]);
             if ($isLimitByGroup):
                 echo ' (' . $totalObjectRelationsByGroup[$groupId] . ')';
-            endif; ?>
+            endif;
             ?>
             <ul>
                 <?php foreach ($relations as $objectRelation): ?>
