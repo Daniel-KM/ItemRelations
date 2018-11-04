@@ -102,38 +102,44 @@ class ItemRelationsPlugin extends Omeka_Plugin_AbstractPlugin
         ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
         $db->query($sql);
 
-        // Install the formal vocabularies and their properties.
-        self::hookInitialize(); // Make sure that the i18n file is already loaded
-        $formalVocabularies = include 'formal_vocabularies.php';
-        foreach ($formalVocabularies as $formalVocabulary) {
-            $vocabulary = new ItemRelationsVocabulary;
-            $vocabulary->name = $formalVocabulary['name'];
-            $vocabulary->description = $formalVocabulary['description'];
-            $vocabulary->namespace_prefix = $formalVocabulary['namespace_prefix'];
-            $vocabulary->namespace_uri = $formalVocabulary['namespace_uri'];
-            $vocabulary->custom = 0;
-            $vocabulary->save();
+        // Check if there is no vocabulary first (may fix https://github.com/Daniel-KM/Omeka-plugin-ItemRelations/issues/3).
+        $sql = "SELECT COUNT(*) FROM `$db->ItemRelationsVocabulary`";
+        $relationVocabularyExists = (bool) $db->fetchOne($sql);
 
-            $vocabularyId = $vocabulary->id;
+        if (!$relationVocabularyExists) {
+            // Install the formal vocabularies and their properties.
+            self::hookInitialize(); // Make sure that the i18n file is already loaded
+            $formalVocabularies = include 'formal_vocabularies.php';
+            foreach ($formalVocabularies as $formalVocabulary) {
+                $vocabulary = new ItemRelationsVocabulary;
+                $vocabulary->name = $formalVocabulary['name'];
+                $vocabulary->description = $formalVocabulary['description'];
+                $vocabulary->namespace_prefix = $formalVocabulary['namespace_prefix'];
+                $vocabulary->namespace_uri = $formalVocabulary['namespace_uri'];
+                $vocabulary->custom = 0;
+                $vocabulary->save();
 
-            foreach ($formalVocabulary['properties'] as $formalProperty) {
-                $property = new ItemRelationsProperty;
-                $property->vocabulary_id = $vocabularyId;
-                $property->local_part = $formalProperty['local_part'];
-                $property->label = $formalProperty['label'];
-                $property->description = $formalProperty['description'];
-                $property->save();
+                $vocabularyId = $vocabulary->id;
+
+                foreach ($formalVocabulary['properties'] as $formalProperty) {
+                    $property = new ItemRelationsProperty;
+                    $property->vocabulary_id = $vocabularyId;
+                    $property->local_part = $formalProperty['local_part'];
+                    $property->label = $formalProperty['label'];
+                    $property->description = $formalProperty['description'];
+                    $property->save();
+                }
             }
-        }
 
-        // Install a custom vocabulary.
-        $customVocabulary = new ItemRelationsVocabulary;
-        $customVocabulary->name = __('Custom');
-        $customVocabulary->description = __('Custom vocabulary containing relations defined for this Omeka instance.');
-        $customVocabulary->namespace_prefix = ''; // cannot be NULL
-        $customVocabulary->namespace_uri = null;
-        $customVocabulary->custom = 1;
-        $customVocabulary->save();
+            // Install a custom vocabulary.
+            $customVocabulary = new ItemRelationsVocabulary;
+            $customVocabulary->name = __('Custom');
+            $customVocabulary->description = __('Custom vocabulary containing relations defined for this Omeka instance.');
+            $customVocabulary->namespace_prefix = ''; // cannot be NULL
+            $customVocabulary->namespace_uri = null;
+            $customVocabulary->custom = 1;
+            $customVocabulary->save();
+        }
 
         $this->_installOptions();
     }
@@ -243,10 +249,15 @@ class ItemRelationsPlugin extends Omeka_Plugin_AbstractPlugin
             }
         }
 
-        if ($oldVersion < '2.0.2.1') {
-            // Insert relation_comment column
-            $sql = "ALTER TABLE `{$db->prefix}item_relations_relations` ADD `relation_comment` VARCHAR(60) NOT NULL DEFAULT '' AFTER `object_item_id`";
-            $db->query($sql);
+        // Insert relation_comment column if none (for example after upgrade of official version).
+        if ($oldVersion < '2.1.1') {
+            // Check if the column "relation_comment" exists first (may fix https://github.com/Daniel-KM/Omeka-plugin-ItemRelations/issues/3).
+            $sql = "SELECT * FROM `$db->ItemRelationsRelation` LIMIT 1";
+            $row = $db->fetchRow($sql);
+            if (!array_key_exists('relation_comment', $row)) {
+                $sql = "ALTER IGNORE TABLE `{$db->prefix}item_relations_relations` ADD `relation_comment` VARCHAR(60) NOT NULL DEFAULT '' AFTER `object_item_id`";
+                $db->query($sql);
+            }
         }
     }
 
