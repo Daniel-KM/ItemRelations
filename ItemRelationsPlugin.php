@@ -511,7 +511,7 @@ class ItemRelationsPlugin extends Omeka_Plugin_AbstractPlugin
             : 'all';
 
         $itemRelationItemId = isset($params['item_relations_item_id'])
-            ? (integer) $params['item_relations_item_id']
+            ? (int) $params['item_relations_item_id']
             : null;
 
         if (empty($onField) && empty($itemRelationItemId)) {
@@ -519,7 +519,7 @@ class ItemRelationsPlugin extends Omeka_Plugin_AbstractPlugin
         }
 
         $filterRelation = isset($params['item_relations_property_id'])
-            ? (integer) $params['item_relations_property_id']
+            ? (int) $params['item_relations_property_id']
             : null;
         $filterComment = isset($params['item_relations_comment'])
             ? trim($params['item_relations_comment'])
@@ -864,7 +864,7 @@ class ItemRelationsPlugin extends Omeka_Plugin_AbstractPlugin
           if (!$page) {
               $page = 1;
           }
-          $query .= ' LIMIT ' . (integer) $limit . ' OFFSET ' . (integer) $page;
+          $query .= ' LIMIT ' . (int) $limit . ' OFFSET ' . (int) $page;
       }
 
       # echo "<pre>$query</pre>";

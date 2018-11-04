@@ -12,12 +12,12 @@ switch ($group) {
         } else {
             $subjectRelationsByGroup = array();
             foreach ($subjectRelations as $subjectRelation) {
-                $groupId = (integer) $subjectRelation['object_item']->item_type_id;
+                $groupId = (int) $subjectRelation['object_item']->item_type_id;
                 $subjectRelationsByGroup[$groupId][] = $subjectRelation;
             }
             $objectRelationsByGroup = array();
             foreach ($objectRelations as $objectRelation) {
-                $groupId = (integer) $objectRelation['subject_item']->item_type_id;
+                $groupId = (int) $objectRelation['subject_item']->item_type_id;
                 $objectRelationsByGroup[$groupId][] = $objectRelation;
             }
         }
@@ -69,7 +69,7 @@ switch ($group) {
 <ul>
     <?php foreach ($subjectRelationsByGroup as $groupId => $relations):
         // Avoid an issue when the group id is empty.
-        $groupId = (integer) $groupId;
+        $groupId = (int) $groupId;
     ?>
         <li><?php
             echo $groups[$groupId];
@@ -140,7 +140,7 @@ endif;
 <ul>
     <?php foreach ($objectRelationsByGroup as $groupId => $relations):
         // Avoid an issue when the group id is empty.
-        $groupId = (integer) $groupId;
+        $groupId = (int) $groupId;
     ?>
         <li><?php
             echo __($groups[$groupId]);

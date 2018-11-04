@@ -12,12 +12,12 @@ switch ($group) {
         } else {
             $subjectRelationsByGroup = array();
             foreach ($subjectRelations as $subjectRelation) {
-                $groupId = (integer) $subjectRelation['object_item']->item_type_id;
+                $groupId = (int) $subjectRelation['object_item']->item_type_id;
                 $subjectRelationsByGroup[$groupId][] = $subjectRelation;
             }
             $objectRelationsByGroup = array();
             foreach ($objectRelations as $objectRelation) {
-                $groupId = (integer) $objectRelation['subject_item']->item_type_id;
+                $groupId = (int) $objectRelation['subject_item']->item_type_id;
                 $objectRelationsByGroup[$groupId][] = $objectRelation;
             }
         }
@@ -71,7 +71,7 @@ if (empty($totalSubjectRelations)):
 else:
     foreach ($subjectRelationsByGroup as $groupId => $relations):
         // Avoid an issue when the group id is empty.
-        $groupId = (integer) $groupId;
+        $groupId = (int) $groupId;
         $relationId = str_replace(' ', '_', $groups[$groupId]);
         $tabIds[$relationId] = $groups[$groupId];
         $label = '<a href="#tabs-' . $relationId . '">' . $groups[$groupId];
@@ -130,7 +130,7 @@ if (empty($totalObjectRelations)):
 else:
     foreach ($objectRelationsByGroup as $groupId => $relations):
         // Avoid an issue when the group id is empty.
-        $groupId = (integer) $groupId;
+        $groupId = (int) $groupId;
         $relationId = str_replace(' ', '_', $groups[$groupId]);
         $tabIds[$relationId] = $groups[$groupId];
         $label = '<a href="#tabs-' . $relationId . '">' . $groups[$groupId];

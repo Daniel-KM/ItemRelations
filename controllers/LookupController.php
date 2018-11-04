@@ -55,8 +55,8 @@ class ItemRelations_LookupController extends Omeka_Controller_AbstractActionCont
 
         $where_id_limit = '';
         if (preg_match('/\s*(\d+)(?:-(\d+))?\s*/', $this->getParam('id_limit'), $matches)) {
-            $fromId = (integer) $matches[1];
-            $toId = (integer) @$matches[2];
+            $fromId = (int) $matches[1];
+            $toId = (int) @$matches[2];
             if (!$toId) {
                 $toId = $fromId;
             }

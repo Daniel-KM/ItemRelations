@@ -196,7 +196,7 @@ class Table_ItemRelationsRelation extends Omeka_Db_Table
 
         $limitedData = array();
         foreach ($data as $row) {
-            $groupId = (integer) $row[$colGroup] ?: '';
+            $groupId = (int) $row[$colGroup] ?: '';
             if (!isset($limitedData[$groupId]) || count($limitedData[$groupId]) < $limit) {
                 $limitedData[$groupId][] = $this->recordFromData($row);
             }
@@ -398,17 +398,17 @@ class Table_ItemRelationsRelation extends Omeka_Db_Table
         if (!is_null($subjectItemId)) {
             $params['subject_item_id'] = is_array($subjectItemId)
                 ? array_map('intval', $subjectItemId)
-                : (integer) $subjectItemId;
+                : (int) $subjectItemId;
         }
         if (!is_null($propertyId)) {
             $params['property_id'] = is_array($propertyId)
                 ? array_map('intval', $propertyId)
-                : (integer) $propertyId;
+                : (int) $propertyId;
         }
         if (!is_null($objectItemId)) {
             $params['object_item_id'] = is_array($objectItemId)
                 ? array_map('intval', $objectItemId)
-                : (integer) $objectItemId;
+                : (int) $objectItemId;
         }
         return $this->findBy($params, $limit, $page);
     }
